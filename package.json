@@ -1,0 +1,10 @@
+{
+  "name": "@codexporer.io/app-analytics",
+  "version": "1.0.0",
+  "main": "src/index.js",
+  "peerDependencies": {
+    "lodash": "*",
+    "aws-amplify": "*",
+    "jest-fetch-mock": "*"
+  }
+}
