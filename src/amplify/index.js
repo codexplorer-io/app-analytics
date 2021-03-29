@@ -53,6 +53,10 @@ export const sendScreenEvent = ({
     screenName,
     attributes
 }) => {
+    if (screenName === data.currentScreen) {
+        return;
+    }
+
     data.currentScreen = screenName;
     data.currentScreen && sendEvent({
         name: 'screen_view',

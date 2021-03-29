@@ -248,6 +248,25 @@ describe('Amplify analytics', () => {
             );
         });
 
+        it('should not send repeated screen name', () => {
+            initialize(defaultConfig);
+
+            sendScreenEvent({ screenName: 'dummyScreen1' });
+            sendScreenEvent({ screenName: 'dummyScreen1' });
+
+            expect(Analytics.record).toHaveBeenCalledTimes(1);
+            expect(Analytics.record).toHaveBeenCalledWith(
+                {
+                    data: {
+                        event_name: 'screen_view',
+                        screen_name: 'dummyScreen1'
+                    },
+                    streamName: 'mockFirehoseStreamName'
+                },
+                'AWSKinesisFirehose'
+            );
+        });
+
         it('should not send screen event if not initialized', () => {
             sendScreenEvent({ screenName: 'dummyScreen' });
 

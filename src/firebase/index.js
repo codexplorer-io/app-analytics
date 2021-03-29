@@ -42,6 +42,10 @@ export const sendScreenEvent = ({
         return;
     }
 
+    if (screenName === data.currentScreen) {
+        return;
+    }
+
     data.currentScreen = screenName;
     getAnalytics().setCurrentScreen(screenName);
     screenName && sendEvent({

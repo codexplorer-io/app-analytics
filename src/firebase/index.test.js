@@ -224,6 +224,21 @@ describe('Firebase analytics', () => {
             );
         });
 
+        it('should not send repeated screen name', () => {
+            initialize(defaultConfig);
+
+            sendScreenEvent({ screenName: 'dummyScreen1' });
+            sendScreenEvent({ screenName: 'dummyScreen1' });
+
+            expect(firebase.setCurrentScreen).toHaveBeenCalledTimes(1);
+            expect(firebase.setCurrentScreen).toHaveBeenCalledWith('dummyScreen1');
+            expect(firebase.logEvent).toHaveBeenCalledTimes(1);
+            expect(firebase.logEvent).toHaveBeenCalledWith(
+                'screen_view',
+                { screen_name: 'dummyScreen1' }
+            );
+        });
+
         it('should not send screen event if not initialized', () => {
             sendScreenEvent({ screenName: 'dummyScreen' });
 
