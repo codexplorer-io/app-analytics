@@ -104,6 +104,42 @@ describe('Firebase analytics', () => {
             );
         });
 
+        it('should map array attribute to string', () => {
+            initialize(defaultConfig);
+
+            sendEvent({
+                name: 'mock_event',
+                attributes: { array_attribute: [1, 2, 3, 4] }
+            });
+
+            expect(firebase.logEvent).toHaveBeenCalledTimes(1);
+            expect(firebase.logEvent).toHaveBeenCalledWith(
+                'mock_event',
+                { attr_array_attribute: '[1;2;3;4]' }
+            );
+        });
+
+        it('should map boolean attribute to string', () => {
+            initialize(defaultConfig);
+
+            sendEvent({
+                name: 'mock_event',
+                attributes: {
+                    true_boolean_attribute: true,
+                    false_boolean_attribute: false
+                }
+            });
+
+            expect(firebase.logEvent).toHaveBeenCalledTimes(1);
+            expect(firebase.logEvent).toHaveBeenCalledWith(
+                'mock_event',
+                {
+                    attr_true_boolean_attribute: 'true',
+                    attr_false_boolean_attribute: 'false'
+                }
+            );
+        });
+
         it('should not send event if not initialized', () => {
             sendEvent({ name: 'mock_event' });
 

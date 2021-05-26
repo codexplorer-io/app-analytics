@@ -1,4 +1,7 @@
 import reduce from 'lodash/reduce';
+import isArray from 'lodash/isArray';
+import isBoolean from 'lodash/isBoolean';
+import join from 'lodash/join';
 import { FirebaseAnalytics } from './firebase-analytics';
 
 let firebaseAnalytics = null;
@@ -22,6 +25,12 @@ export const sendEvent = ({ name, attributes }) => {
     getAnalytics().logEvent(name, {
         ...(data.currentScreen ? { screen_name: data.currentScreen } : {}),
         ...(reduce(attributes, (result, value, key) => {
+            if (isArray(value)) {
+                value = `[${join(value, ';')}]`;
+            } else if (isBoolean(value)) {
+                value = value.toString();
+            }
+
             result[`attr_${key}`] = value;
             return result;
         }, {})),
