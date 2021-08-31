@@ -204,7 +204,7 @@ export class FirebaseAnalytics {
         }
     }
 
-    static isValidName(name, maxLength): boolean {
+    static isValidName(name, maxLength) {
         return !!(
             name &&
             name.length &&
