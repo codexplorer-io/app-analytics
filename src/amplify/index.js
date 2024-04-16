@@ -1,6 +1,7 @@
 import reduce from 'lodash/reduce';
+import { configureAutoTrack } from 'aws-amplify/analytics';
+import { record } from 'aws-amplify/analytics/kinesis-firehose';
 
-let awsAnalytics = null;
 const data = {};
 
 export const initialize = config => {
@@ -9,28 +10,30 @@ export const initialize = config => {
     }
 
     try {
-        // eslint-disable-next-line global-require
-        const { Analytics, AWSKinesisFirehoseProvider } = require('@aws-amplify/analytics');
-        awsAnalytics = Analytics;
+        configureAutoTrack({
+            enable: false,
+            type: 'session'
+        });
+        configureAutoTrack({
+            enable: false,
+            type: 'pageView'
+        });
+        configureAutoTrack({
+            enable: false,
+            type: 'event'
+        });
         data.config = config;
-        Analytics.addPluggable(new AWSKinesisFirehoseProvider());
-        Analytics.autoTrack('session', { enable: false });
-        Analytics.autoTrack('pageView', { enable: false });
-        Analytics.autoTrack('event', { enable: false });
     } catch ({ message }) {
-        awsAnalytics = null;
         throw new Error(`AWS Amplify analytics initialization failed with error: ${message}`);
     }
 };
 
-const getAnalytics = () => awsAnalytics;
-
 export const sendEvent = ({ name, attributes }) => {
-    if (!getAnalytics()) {
+    if (!data.config) {
         return;
     }
 
-    getAnalytics().record({
+    record({
         data: {
             event_name: name,
             ...(data.currentScreen ? { screen_name: data.currentScreen } : {}),
@@ -46,7 +49,7 @@ export const sendEvent = ({ name, attributes }) => {
             }))
         },
         streamName: data.config.firehoseStreamName
-    }, 'AWSKinesisFirehose');
+    });
 };
 
 export const sendScreenEvent = ({

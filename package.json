@@ -4,7 +4,7 @@
   "main": "src/index.js",
   "peerDependencies": {
     "lodash": "*",
-    "aws-amplify": "*",
+    "aws-amplify": ">=6.0.0",
     "jest-fetch-mock": "*"
   }
 }

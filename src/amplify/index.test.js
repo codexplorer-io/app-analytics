@@ -1,14 +1,12 @@
-import { Analytics } from '@aws-amplify/analytics';
+import { configureAutoTrack } from 'aws-amplify/analytics';
+import { record } from 'aws-amplify/analytics/kinesis-firehose';
 
-jest.mock('@aws-amplify/analytics', () => ({
-    Analytics: {
-        addPluggable: jest.fn(),
-        autoTrack: jest.fn(),
-        record: jest.fn()
-    },
-    AWSKinesisFirehoseProvider: function AWSKinesisFirehoseProvider() {
-        this.key = 'AWSKinesisFirehoseProvider';
-    }
+jest.mock('aws-amplify/analytics', () => ({
+    configureAutoTrack: jest.fn()
+}));
+
+jest.mock('aws-amplify/analytics/kinesis-firehose', () => ({
+    record: jest.fn()
 }));
 
 describe('Amplify analytics', () => {
@@ -34,7 +32,7 @@ describe('Amplify analytics', () => {
     });
 
     afterEach(() => {
-        Analytics.addPluggable.mockReset();
+        configureAutoTrack.mockReset();
         jest.clearAllMocks();
     });
 
@@ -42,23 +40,29 @@ describe('Amplify analytics', () => {
         it('should be correctly initialized', () => {
             initialize(defaultConfig);
 
-            expect(Analytics.addPluggable).toHaveBeenCalledTimes(1);
-            expect(Analytics.addPluggable.mock.calls[0][0].key).toBe('AWSKinesisFirehoseProvider');
-            expect(Analytics.autoTrack).toHaveBeenCalledTimes(3);
-            expect(Analytics.autoTrack).toHaveBeenNthCalledWith(1, 'session', { enable: false });
-            expect(Analytics.autoTrack).toHaveBeenNthCalledWith(2, 'pageView', { enable: false });
-            expect(Analytics.autoTrack).toHaveBeenNthCalledWith(3, 'event', { enable: false });
+            expect(configureAutoTrack).toHaveBeenCalledTimes(3);
+            expect(configureAutoTrack).toHaveBeenNthCalledWith(1, {
+                enable: false,
+                type: 'session'
+            });
+            expect(configureAutoTrack).toHaveBeenNthCalledWith(2, {
+                enable: false,
+                type: 'pageView'
+            });
+            expect(configureAutoTrack).toHaveBeenNthCalledWith(3, {
+                enable: false,
+                type: 'event'
+            });
         });
 
         it('should not initialize when no config', () => {
             initialize(null);
 
-            expect(Analytics.addPluggable).not.toHaveBeenCalled();
-            expect(Analytics.autoTrack).not.toHaveBeenCalled();
+            expect(configureAutoTrack).not.toHaveBeenCalled();
         });
 
         it('should throw an error when analytics initialization fails', () => {
-            Analytics.addPluggable.mockImplementation(() => {
+            configureAutoTrack.mockImplementation(() => {
                 throw new Error('mock error');
             });
 
@@ -76,11 +80,11 @@ describe('Amplify analytics', () => {
 
             sendEvent({ name: 'mock_event' });
 
-            expect(Analytics.record).toHaveBeenCalledTimes(1);
-            expect(Analytics.record).toHaveBeenCalledWith({
+            expect(record).toHaveBeenCalledTimes(1);
+            expect(record).toHaveBeenCalledWith({
                 data: { event_name: 'mock_event' },
                 streamName: 'mockFirehoseStreamName'
-            }, 'AWSKinesisFirehose');
+            });
         });
 
         it('should send event with attributes', () => {
@@ -94,21 +98,21 @@ describe('Amplify analytics', () => {
                 }
             });
 
-            expect(Analytics.record).toHaveBeenCalledTimes(1);
-            expect(Analytics.record).toHaveBeenCalledWith({
+            expect(record).toHaveBeenCalledTimes(1);
+            expect(record).toHaveBeenCalledWith({
                 data: {
                     event_name: 'mock_event',
                     attr_hello: 'world',
                     attr_lorem: 'ipsum'
                 },
                 streamName: 'mockFirehoseStreamName'
-            }, 'AWSKinesisFirehose');
+            });
         });
 
         it('should not send event if not initialized', () => {
             sendEvent({ name: 'mock_event' });
 
-            expect(Analytics.record).not.toHaveBeenCalled();
+            expect(record).not.toHaveBeenCalled();
         });
 
         it('should not send event if configuration is not passed on initialization', () => {
@@ -116,11 +120,11 @@ describe('Amplify analytics', () => {
 
             sendEvent({ name: 'mock_event' });
 
-            expect(Analytics.record).not.toHaveBeenCalled();
+            expect(record).not.toHaveBeenCalled();
         });
 
         it('should not send event if initialization failed', () => {
-            Analytics.addPluggable.mockImplementation(() => {
+            configureAutoTrack.mockImplementation(() => {
                 throw new Error('mock error');
             });
 
@@ -131,7 +135,7 @@ describe('Amplify analytics', () => {
 
             sendEvent({ name: 'mock_event' });
 
-            expect(Analytics.record).not.toHaveBeenCalled();
+            expect(record).not.toHaveBeenCalled();
         });
     });
 
@@ -141,14 +145,14 @@ describe('Amplify analytics', () => {
 
             sendScreenEvent({ screenName: 'dummyScreen' });
 
-            expect(Analytics.record).toHaveBeenCalledTimes(1);
-            expect(Analytics.record).toHaveBeenCalledWith({
+            expect(record).toHaveBeenCalledTimes(1);
+            expect(record).toHaveBeenCalledWith({
                 data: {
                     event_name: 'screen_view',
                     screen_name: 'dummyScreen'
                 },
                 streamName: 'mockFirehoseStreamName'
-            }, 'AWSKinesisFirehose');
+            });
         });
 
         it('should send screen event with attributes', () => {
@@ -162,8 +166,8 @@ describe('Amplify analytics', () => {
                 }
             });
 
-            expect(Analytics.record).toHaveBeenCalledTimes(1);
-            expect(Analytics.record).toHaveBeenCalledWith({
+            expect(record).toHaveBeenCalledTimes(1);
+            expect(record).toHaveBeenCalledWith({
                 data: {
                     event_name: 'screen_view',
                     screen_name: 'dummyScreen',
@@ -171,7 +175,7 @@ describe('Amplify analytics', () => {
                     attr_lorem: 'ipsum'
                 },
                 streamName: 'mockFirehoseStreamName'
-            }, 'AWSKinesisFirehose');
+            });
         });
 
         it('should send events with correct screen name', () => {
@@ -185,16 +189,15 @@ describe('Amplify analytics', () => {
             sendScreenEvent({ screenName: null });
             sendEvent({ name: 'mock_event' });
 
-            expect(Analytics.record).toHaveBeenCalledTimes(6);
-            expect(Analytics.record).toHaveBeenNthCalledWith(
+            expect(record).toHaveBeenCalledTimes(6);
+            expect(record).toHaveBeenNthCalledWith(
                 1,
                 {
                     data: { event_name: 'mock_event' },
                     streamName: 'mockFirehoseStreamName'
-                },
-                'AWSKinesisFirehose'
+                }
             );
-            expect(Analytics.record).toHaveBeenNthCalledWith(
+            expect(record).toHaveBeenNthCalledWith(
                 2,
                 {
                     data: {
@@ -202,10 +205,9 @@ describe('Amplify analytics', () => {
                         screen_name: 'dummyScreen1'
                     },
                     streamName: 'mockFirehoseStreamName'
-                },
-                'AWSKinesisFirehose'
+                }
             );
-            expect(Analytics.record).toHaveBeenNthCalledWith(
+            expect(record).toHaveBeenNthCalledWith(
                 3,
                 {
                     data: {
@@ -213,10 +215,9 @@ describe('Amplify analytics', () => {
                         screen_name: 'dummyScreen1'
                     },
                     streamName: 'mockFirehoseStreamName'
-                },
-                'AWSKinesisFirehose'
+                }
             );
-            expect(Analytics.record).toHaveBeenNthCalledWith(
+            expect(record).toHaveBeenNthCalledWith(
                 4,
                 {
                     data: {
@@ -224,10 +225,9 @@ describe('Amplify analytics', () => {
                         screen_name: 'dummyScreen2'
                     },
                     streamName: 'mockFirehoseStreamName'
-                },
-                'AWSKinesisFirehose'
+                }
             );
-            expect(Analytics.record).toHaveBeenNthCalledWith(
+            expect(record).toHaveBeenNthCalledWith(
                 5,
                 {
                     data: {
@@ -235,16 +235,14 @@ describe('Amplify analytics', () => {
                         screen_name: 'dummyScreen2'
                     },
                     streamName: 'mockFirehoseStreamName'
-                },
-                'AWSKinesisFirehose'
+                }
             );
-            expect(Analytics.record).toHaveBeenNthCalledWith(
+            expect(record).toHaveBeenNthCalledWith(
                 6,
                 {
                     data: { event_name: 'mock_event' },
                     streamName: 'mockFirehoseStreamName'
-                },
-                'AWSKinesisFirehose'
+                }
             );
         });
 
@@ -254,23 +252,22 @@ describe('Amplify analytics', () => {
             sendScreenEvent({ screenName: 'dummyScreen1' });
             sendScreenEvent({ screenName: 'dummyScreen1' });
 
-            expect(Analytics.record).toHaveBeenCalledTimes(1);
-            expect(Analytics.record).toHaveBeenCalledWith(
+            expect(record).toHaveBeenCalledTimes(1);
+            expect(record).toHaveBeenCalledWith(
                 {
                     data: {
                         event_name: 'screen_view',
                         screen_name: 'dummyScreen1'
                     },
                     streamName: 'mockFirehoseStreamName'
-                },
-                'AWSKinesisFirehose'
+                }
             );
         });
 
         it('should not send screen event if not initialized', () => {
             sendScreenEvent({ screenName: 'dummyScreen' });
 
-            expect(Analytics.record).not.toHaveBeenCalled();
+            expect(record).not.toHaveBeenCalled();
         });
 
         it('should not send screen event if configuration is not passed on initialization', () => {
@@ -278,11 +275,11 @@ describe('Amplify analytics', () => {
 
             sendScreenEvent({ screenName: 'dummyScreen' });
 
-            expect(Analytics.record).not.toHaveBeenCalled();
+            expect(record).not.toHaveBeenCalled();
         });
 
         it('should not send screen event if initialization failed', () => {
-            Analytics.addPluggable.mockImplementation(() => {
+            configureAutoTrack.mockImplementation(() => {
                 throw new Error('mock error');
             });
 
@@ -293,7 +290,7 @@ describe('Amplify analytics', () => {
 
             sendScreenEvent({ screenName: 'dummyScreen' });
 
-            expect(Analytics.record).not.toHaveBeenCalled();
+            expect(record).not.toHaveBeenCalled();
         });
     });
 
@@ -304,14 +301,14 @@ describe('Amplify analytics', () => {
 
             sendEvent({ name: 'mock_event' });
 
-            expect(Analytics.record).toHaveBeenCalledTimes(1);
-            expect(Analytics.record).toHaveBeenCalledWith({
+            expect(record).toHaveBeenCalledTimes(1);
+            expect(record).toHaveBeenCalledWith({
                 data: {
                     event_name: 'mock_event',
                     usrprop_user_id: 'mockUserId'
                 },
                 streamName: 'mockFirehoseStreamName'
-            }, 'AWSKinesisFirehose');
+            });
         });
 
         it('should send events with correct user id', () => {
@@ -325,16 +322,15 @@ describe('Amplify analytics', () => {
             setUserId(null);
             sendEvent({ name: 'mock_event' });
 
-            expect(Analytics.record).toHaveBeenCalledTimes(4);
-            expect(Analytics.record).toHaveBeenNthCalledWith(
+            expect(record).toHaveBeenCalledTimes(4);
+            expect(record).toHaveBeenNthCalledWith(
                 1,
                 {
                     data: { event_name: 'mock_event' },
                     streamName: 'mockFirehoseStreamName'
-                },
-                'AWSKinesisFirehose'
+                }
             );
-            expect(Analytics.record).toHaveBeenNthCalledWith(
+            expect(record).toHaveBeenNthCalledWith(
                 2,
                 {
                     data: {
@@ -342,10 +338,9 @@ describe('Amplify analytics', () => {
                         usrprop_user_id: 'user1'
                     },
                     streamName: 'mockFirehoseStreamName'
-                },
-                'AWSKinesisFirehose'
+                }
             );
-            expect(Analytics.record).toHaveBeenNthCalledWith(
+            expect(record).toHaveBeenNthCalledWith(
                 3,
                 {
                     data: {
@@ -353,16 +348,14 @@ describe('Amplify analytics', () => {
                         usrprop_user_id: 'user2'
                     },
                     streamName: 'mockFirehoseStreamName'
-                },
-                'AWSKinesisFirehose'
+                }
             );
-            expect(Analytics.record).toHaveBeenNthCalledWith(
+            expect(record).toHaveBeenNthCalledWith(
                 4,
                 {
                     data: { event_name: 'mock_event' },
                     streamName: 'mockFirehoseStreamName'
-                },
-                'AWSKinesisFirehose'
+                }
             );
         });
 
@@ -370,7 +363,7 @@ describe('Amplify analytics', () => {
             setUserId('user1');
             sendEvent({ name: 'mock_event' });
 
-            expect(Analytics.record).not.toHaveBeenCalled();
+            expect(record).not.toHaveBeenCalled();
         });
     });
 
@@ -384,15 +377,15 @@ describe('Amplify analytics', () => {
 
             sendEvent({ name: 'mock_event' });
 
-            expect(Analytics.record).toHaveBeenCalledTimes(1);
-            expect(Analytics.record).toHaveBeenCalledWith({
+            expect(record).toHaveBeenCalledTimes(1);
+            expect(record).toHaveBeenCalledWith({
                 data: {
                     event_name: 'mock_event',
                     usrprop_hello: 'world',
                     usrprop_lorem: 'ipsum'
                 },
                 streamName: 'mockFirehoseStreamName'
-            }, 'AWSKinesisFirehose');
+            });
         });
 
         it('should send events with correct user properties', () => {
@@ -412,16 +405,15 @@ describe('Amplify analytics', () => {
             setUserProperties(null);
             sendEvent({ name: 'mock_event' });
 
-            expect(Analytics.record).toHaveBeenCalledTimes(4);
-            expect(Analytics.record).toHaveBeenNthCalledWith(
+            expect(record).toHaveBeenCalledTimes(4);
+            expect(record).toHaveBeenNthCalledWith(
                 1,
                 {
                     data: { event_name: 'mock_event' },
                     streamName: 'mockFirehoseStreamName'
-                },
-                'AWSKinesisFirehose'
+                }
             );
-            expect(Analytics.record).toHaveBeenNthCalledWith(
+            expect(record).toHaveBeenNthCalledWith(
                 2,
                 {
                     data: {
@@ -430,10 +422,9 @@ describe('Amplify analytics', () => {
                         usrprop_lorem1: 'ipsum1'
                     },
                     streamName: 'mockFirehoseStreamName'
-                },
-                'AWSKinesisFirehose'
+                }
             );
-            expect(Analytics.record).toHaveBeenNthCalledWith(
+            expect(record).toHaveBeenNthCalledWith(
                 3,
                 {
                     data: {
@@ -442,16 +433,14 @@ describe('Amplify analytics', () => {
                         usrprop_lorem2: 'ipsum2'
                     },
                     streamName: 'mockFirehoseStreamName'
-                },
-                'AWSKinesisFirehose'
+                }
             );
-            expect(Analytics.record).toHaveBeenNthCalledWith(
+            expect(record).toHaveBeenNthCalledWith(
                 4,
                 {
                     data: { event_name: 'mock_event' },
                     streamName: 'mockFirehoseStreamName'
-                },
-                'AWSKinesisFirehose'
+                }
             );
         });
 
@@ -462,7 +451,7 @@ describe('Amplify analytics', () => {
             });
             sendEvent({ name: 'mock_event' });
 
-            expect(Analytics.record).not.toHaveBeenCalled();
+            expect(record).not.toHaveBeenCalled();
         });
     });
 });
