@@ -61,16 +61,12 @@ describe('Amplify analytics', () => {
             expect(configureAutoTrack).not.toHaveBeenCalled();
         });
 
-        it('should throw an error when analytics initialization fails', () => {
+        it('should not throw an error when configure auto track fails', () => {
             configureAutoTrack.mockImplementation(() => {
                 throw new Error('mock error');
             });
 
-            try {
-                initialize(defaultConfig);
-            } catch (error) {
-                expect(error.message).toBe('AWS Amplify analytics initialization failed with error: mock error');
-            }
+            expect(initialize(defaultConfig)).not.toBeDefined();
         });
     });
 
@@ -123,19 +119,22 @@ describe('Amplify analytics', () => {
             expect(record).not.toHaveBeenCalled();
         });
 
-        it('should not send event if initialization failed', () => {
+        it('should send event if configureAutoTrack failed', () => {
             configureAutoTrack.mockImplementation(() => {
                 throw new Error('mock error');
             });
 
-            try {
-                initialize(defaultConfig);
-                // eslint-disable-next-line no-empty
-            } catch { }
+            initialize(defaultConfig);
 
             sendEvent({ name: 'mock_event' });
 
-            expect(record).not.toHaveBeenCalled();
+            expect(record).toHaveBeenCalledTimes(1);
+            expect(record).toHaveBeenCalledWith({
+                data: {
+                    event_name: 'mock_event'
+                },
+                streamName: 'mockFirehoseStreamName'
+            });
         });
     });
 
@@ -278,19 +277,25 @@ describe('Amplify analytics', () => {
             expect(record).not.toHaveBeenCalled();
         });
 
-        it('should not send screen event if initialization failed', () => {
+        it('should send screen event if configureAutoTrack failed', () => {
             configureAutoTrack.mockImplementation(() => {
                 throw new Error('mock error');
             });
 
-            try {
-                initialize(defaultConfig);
-                // eslint-disable-next-line no-empty
-            } catch { }
+            initialize(defaultConfig);
 
             sendScreenEvent({ screenName: 'dummyScreen' });
 
-            expect(record).not.toHaveBeenCalled();
+            expect(record).toHaveBeenCalledTimes(1);
+            expect(record).toHaveBeenCalledWith(
+                {
+                    data: {
+                        event_name: 'screen_view',
+                        screen_name: 'dummyScreen'
+                    },
+                    streamName: 'mockFirehoseStreamName'
+                }
+            );
         });
     });
 

@@ -14,18 +14,29 @@ export const initialize = config => {
             enable: false,
             type: 'session'
         });
+    } catch {
+        // ignore empty block
+    }
+
+    try {
         configureAutoTrack({
             enable: false,
             type: 'pageView'
         });
+    } catch {
+        // ignore empty block
+    }
+
+    try {
         configureAutoTrack({
             enable: false,
             type: 'event'
         });
-        data.config = config;
-    } catch ({ message }) {
-        throw new Error(`AWS Amplify analytics initialization failed with error: ${message}`);
+    } catch {
+        // ignore empty block
     }
+
+    data.config = config;
 };
 
 export const sendEvent = ({ name, attributes }) => {
