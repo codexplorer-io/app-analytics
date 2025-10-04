@@ -5,6 +5,7 @@
   "peerDependencies": {
     "lodash": "*",
     "aws-amplify": ">=6.0.0",
+    "react-native-fbsdk-next": ">=13.4.1",
     "jest-fetch-mock": "*"
   }
 }
