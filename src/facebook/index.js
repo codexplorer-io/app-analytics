@@ -9,7 +9,7 @@ export const initialize = config => {
         return;
     }
 
-    // eslint-disable-next-line global-require
+    // eslint-disable-next-line global-require, @typescript-eslint/no-require-imports, no-undef
     facebookSdk = require('react-native-fbsdk-next');
 
     data.config = config;
@@ -20,7 +20,6 @@ export const sendEvent = ({ name, attributes }) => {
         return;
     }
 
-    attributes;
     facebookSdk.AppEventsLogger.logEvent(name, {
         ...(data.currentScreen ? { screen_name: data.currentScreen } : {}),
         ...(reduce(attributes, (result, value, key) => {
@@ -45,10 +44,12 @@ export const sendScreenEvent = ({
     }
 
     data.currentScreen = screenName;
-    data.currentScreen && sendEvent({
-        name: 'screen_view',
-        attributes
-    });
+    if (data.currentScreen) {
+        sendEvent({
+            name: 'screen_view',
+            attributes
+        });
+    }
 };
 
 export const setUserId = id => {
