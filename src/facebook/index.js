@@ -9,7 +9,6 @@ export const initialize = config => {
         return;
     }
 
-    // eslint-disable-next-line global-require, @typescript-eslint/no-require-imports, no-undef
     facebookSdk = require('react-native-fbsdk-next');
 
     data.config = config;

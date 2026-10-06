@@ -176,7 +176,7 @@ export class FirebaseAnalytics {
                     this.flushEventsTimer = undefined;
                     try {
                         await this.flushEventsPromise;
-                    } catch (err) {
+                    } catch {
                         // nop
                     }
                     this.flushEventsPromise = this.flushEvents();
@@ -289,7 +289,6 @@ export class FirebaseAnalytics {
         const event = FirebaseAnalytics.parseEvent(this.options, eventName, eventParams);
         if (!this.enabled) return;
         if (this.options.debug) {
-            // eslint-disable-next-line no-console
             console.log(
                 `FirebaseAnalytics event: "${eventName}", params: ${JSON.stringify(
                     eventParams,
